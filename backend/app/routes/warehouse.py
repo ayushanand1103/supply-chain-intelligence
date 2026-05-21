@@ -26,3 +26,13 @@ def create_warehouse(warehouse: WarehouseBase):
     db.refresh(db_warehouse)
 
     return db_warehouse
+
+
+@router.get("/", response_model=list[WarehouseBase])
+def get_warehouses():
+
+    db = SessionLocal()
+
+    warehouses = db.query(Warehouse).all()
+
+    return warehouses

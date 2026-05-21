@@ -10,6 +10,6 @@ app = FastAPI()
 
 app.include_router(warehouse_router)
 
-@app.get("/")
+@app.get("/", tags=["system"])
 def home():
     return {"message": "Supply Chain Intelligence API"}
