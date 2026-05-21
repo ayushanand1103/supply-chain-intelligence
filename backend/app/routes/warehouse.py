@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter,HTTPException
 from sqlalchemy.orm import Session
 
 from app.database import SessionLocal
@@ -47,3 +47,42 @@ def get_warehouse_by_id(warehouse_id: int):
     ).first()
 
     return warehouse
+
+@router.put("/{warehouse_id}", response_model=WarehouseResponse)
+def update_warehouse(
+    warehouse_id:int,
+    warehouse_data : WarehouseCreate):
+
+    db = SessionLocal()
+
+    warehouse = db.query(Warehouse).filter(
+        Warehouse.id == warehouse_id
+    ).first()
+
+    if not warehouse:
+        raise HTTPException(status_code=404, detail="Warehouse not found")
+
+    for key, value in warehouse_data.dict().items():
+        setattr(warehouse, key, value)
+
+    db.commit()
+    db.refresh(warehouse)
+
+    return warehouse
+
+@router.delete("/{warehouse_id}")
+def delete_warehouse(warehouse_id:int):
+
+    db = SessionLocal()
+
+    warehouse = db.query(Warehouse).filter(
+        Warehouse.id == warehouse_id
+    ).first()
+
+    if not warehouse:
+        raise HTTPException(status_code=404, detail="Warehouse not found")
+
+    db.delete(warehouse)
+    db.commit()
+
+    return {"detail": "Warehouse deleted successfully"}
