@@ -12,8 +12,18 @@ router = APIRouter(
 
 @router.post("/", response_model=WarehouseResponse)
 def create_warehouse(warehouse: WarehouseCreate):
-    
+
     db = SessionLocal()
+
+    existing_warehouse = db.query(Warehouse).filter(
+        Warehouse.name == warehouse.name
+    ).first()
+
+    if existing_warehouse:
+        raise HTTPException(
+            status_code=400,
+            detail="Warehouse already exists"
+        )
 
     db_warehouse = Warehouse(
         name=warehouse.name,
@@ -22,11 +32,12 @@ def create_warehouse(warehouse: WarehouseCreate):
     )
 
     db.add(db_warehouse)
+
     db.commit()
+
     db.refresh(db_warehouse)
 
     return db_warehouse
-
 
 @router.get("/", response_model=list[WarehouseResponse])
 def get_warehouses():

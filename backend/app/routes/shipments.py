@@ -15,18 +15,19 @@ def create_shipment(shipment: ShipmentCreate):
     db = SessionLocal()
 
     db_shipment = Shipment(
-        source=shipment.source,
-        destination=shipment.destination,
+        source_warehouse_id=shipment.source_warehouse_id,
+        destination_warehouse_id=shipment.destination_warehouse_id,
         status=shipment.status,
         delay_hours=shipment.delay_hours
     )
 
     db.add(db_shipment)
+
     db.commit()
+
     db.refresh(db_shipment)
 
     return db_shipment
-
 
 @router.get("/", response_model=list[ShipmentResponse])
 def get_shipments():
@@ -68,8 +69,8 @@ def update_shipment(
             detail="Shipment not found"
         )
 
-    shipment.source = shipment_data.source
-    shipment.destination = shipment_data.destination
+    shipment.source_warehouse_id = shipment_data.source_warehouse_id
+    shipment.destination_warehouse_id = shipment_data.destination_warehouse_id
     shipment.status = shipment_data.status
     shipment.delay_hours = shipment_data.delay_hours
 

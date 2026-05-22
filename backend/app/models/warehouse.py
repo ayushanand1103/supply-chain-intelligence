@@ -5,6 +5,6 @@ class Warehouse(Base):
     __tablename__ = "warehouses"
 
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, nullable=False)
+    name = Column(String, nullable=False, unique=True)
     city = Column(String, nullable=False)
     capacity = Column(Integer)
