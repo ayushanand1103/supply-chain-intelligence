@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-class ShipmentCreate(Basemodel):
+class ShipmentCreate(BaseModel):
     source: str
     destination: str
     status: str
@@ -12,4 +12,3 @@ class ShipmentResponse(ShipmentCreate):
 
     class Config:
         from_attributes = True
-        

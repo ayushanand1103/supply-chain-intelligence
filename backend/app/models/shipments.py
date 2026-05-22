@@ -1,7 +1,7 @@
 from sqlalchemy import Column , Integer , String , DateTime
 from app.database import Base
 
-class shimpment(Base):
+class Shipment(Base):
 
     __tablename__ = "shimpments"
 
@@ -11,5 +11,5 @@ class shimpment(Base):
     status = Column(String , nullable = False)
     delay_hours = Column(Integer , default=0)
 
-    
+
 
