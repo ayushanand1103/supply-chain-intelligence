@@ -14,20 +14,22 @@ def create_shipment(shipment: ShipmentCreate):
 
     db = SessionLocal()
 
-    db_shipment = Shipment(
-        source_warehouse_id=shipment.source_warehouse_id,
-        destination_warehouse_id=shipment.destination_warehouse_id,
-        status=shipment.status,
-        delay_hours=shipment.delay_hours
-    )
+    new_shipment = Shipment(
+    source_warehouse_id=shipment.source_warehouse_id,
+    destination_warehouse_id=shipment.destination_warehouse_id,
+    status=shipment.status,
+    delay_hours=shipment.delay_hours,
+    cost=shipment.cost,
+    distance_km=shipment.distance_km
+)
 
-    db.add(db_shipment)
+    db.add(new_shipment)
 
     db.commit()
 
-    db.refresh(db_shipment)
+    db.refresh(new_shipment)
 
-    return db_shipment
+    return new_shipment
 
 @router.get("/", response_model=list[ShipmentResponse])
 def get_shipments():

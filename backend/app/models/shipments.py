@@ -1,4 +1,5 @@
-from sqlalchemy import Column , Integer , String , DateTime , ForeignKey
+from sqlalchemy import Column,Integer,String,Float,DateTime,ForeignKey
+from datetime import datetime
 from app.database import Base
 
 class Shipment(Base):
@@ -10,6 +11,11 @@ class Shipment(Base):
     destination_warehouse_id = Column(Integer ,ForeignKey("warehouses.id") , nullable = False)
     status = Column(String , nullable = False)
     delay_hours = Column(Integer , default=0)
+    cost = Column(Float, default=0)
+    distance_km = Column(Float, default=0)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    
 
 
 
