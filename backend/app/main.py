@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from app.database import engine, Base
 from app.models.warehouse import Warehouse
 from app.routes.warehouse import router as warehouse_router
+from app.models.shipments import shimpment
 
 Base.metadata.create_all(bind=engine)
 
