@@ -1,10 +1,27 @@
 from sqlalchemy import Column, Integer, String
+from sqlalchemy.orm import relationship
+
 from app.database import Base
 
+
 class Warehouse(Base):
+
     __tablename__ = "warehouses"
 
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, nullable=False, unique=True)
+
+    name = Column(String, nullable=False)
+
     city = Column(String, nullable=False)
-    capacity = Column(Integer)
+
+    capacity = Column(Integer, nullable=False)
+
+    outgoing_shipments = relationship(
+        "Shipment",
+        foreign_keys="Shipment.source_warehouse_id"
+    )
+
+    incoming_shipments = relationship(
+        "Shipment",
+        foreign_keys="Shipment.destination_warehouse_id"
+    )

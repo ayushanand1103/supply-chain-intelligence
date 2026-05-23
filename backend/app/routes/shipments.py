@@ -1,106 +1,196 @@
 from fastapi import APIRouter, HTTPException
 
 from app.database import SessionLocal
+
 from app.models.shipments import Shipment
-from app.schemas.shipments import ShipmentCreate, ShipmentResponse
+from app.models.inventory import Inventory
+
+from app.schemas.shipments import (
+    ShipmentCreate,
+    ShipmentResponse
+)
 
 router = APIRouter(
     prefix="/shipments",
     tags=["shipments"]
 )
 
+
+# =========================================
+# CREATE SHIPMENT
+# =========================================
+
 @router.post("/", response_model=ShipmentResponse)
 def create_shipment(shipment: ShipmentCreate):
 
     db = SessionLocal()
 
-    new_shipment = Shipment(
-    source_warehouse_id=shipment.source_warehouse_id,
-    destination_warehouse_id=shipment.destination_warehouse_id,
-    status=shipment.status,
-    delay_hours=shipment.delay_hours,
-    cost=shipment.cost,
-    distance_km=shipment.distance_km
-)
+    try:
 
-    db.add(new_shipment)
+        # =====================================
+        # CHECK SOURCE INVENTORY
+        # =====================================
 
-    db.commit()
+        source_inventory = db.query(Inventory).filter(
+            Inventory.warehouse_id ==
+            shipment.source_warehouse_id,
 
-    db.refresh(new_shipment)
+            Inventory.product_name ==
+            shipment.product_name
+        ).first()
 
-    return new_shipment
+        if not source_inventory:
+
+            raise HTTPException(
+                status_code=404,
+                detail="Product not found in source warehouse"
+            )
+
+        if source_inventory.quantity < shipment.quantity:
+
+            raise HTTPException(
+                status_code=400,
+                detail="Not enough stock in source warehouse"
+            )
+
+        # =====================================
+        # REDUCE SOURCE STOCK
+        # =====================================
+
+        source_inventory.quantity -= shipment.quantity
+
+        # =====================================
+        # DESTINATION INVENTORY
+        # =====================================
+
+        destination_inventory = db.query(Inventory).filter(
+            Inventory.warehouse_id ==
+            shipment.destination_warehouse_id,
+
+            Inventory.product_name ==
+            shipment.product_name
+        ).first()
+
+        # if product already exists in destination
+        if destination_inventory:
+
+            destination_inventory.quantity += shipment.quantity
+
+        else:
+
+            # create new inventory entry
+            new_inventory = Inventory(
+                warehouse_id=shipment.destination_warehouse_id,
+                product_name=shipment.product_name,
+                quantity=shipment.quantity
+            )
+
+            db.add(new_inventory)
+
+        # =====================================
+        # CREATE SHIPMENT
+        # =====================================
+
+        new_shipment = Shipment(
+            source_warehouse_id=shipment.source_warehouse_id,
+            destination_warehouse_id=shipment.destination_warehouse_id,
+            product_name=shipment.product_name,
+            quantity=shipment.quantity,
+            shipment_type=shipment.shipment_type,
+            status=shipment.status,
+            delay_hours=shipment.delay_hours,
+            cost=shipment.cost,
+            distance_km=shipment.distance_km
+        )
+
+        db.add(new_shipment)
+
+        db.commit()
+
+        db.refresh(new_shipment)
+
+        return new_shipment
+
+    finally:
+        db.close()
+
+
+# =========================================
+# GET ALL SHIPMENTS
+# =========================================
 
 @router.get("/", response_model=list[ShipmentResponse])
 def get_shipments():
 
     db = SessionLocal()
 
-    shipments = db.query(Shipment).all()
+    try:
 
-    return shipments
+        shipments = db.query(Shipment).all()
 
+        return shipments
+
+    finally:
+        db.close()
+
+
+# =========================================
+# GET SHIPMENT BY ID
+# =========================================
 
 @router.get("/{shipment_id}", response_model=ShipmentResponse)
 def get_shipment_by_id(shipment_id: int):
 
     db = SessionLocal()
 
-    shipment = db.query(Shipment).filter(
-        Shipment.id == shipment_id
-    ).first()
+    try:
 
-    return shipment
+        shipment = db.query(Shipment).filter(
+            Shipment.id == shipment_id
+        ).first()
+
+        if not shipment:
+
+            raise HTTPException(
+                status_code=404,
+                detail="Shipment not found"
+            )
+
+        return shipment
+
+    finally:
+        db.close()
 
 
-@router.put("/{shipment_id}", response_model=ShipmentResponse)
-def update_shipment(
-    shipment_id: int,
-    shipment_data: ShipmentCreate
-):
-
-    db = SessionLocal()
-
-    shipment = db.query(Shipment).filter(
-        Shipment.id == shipment_id
-    ).first()
-
-    if not shipment:
-        raise HTTPException(
-            status_code=404,
-            detail="Shipment not found"
-        )
-
-    shipment.source_warehouse_id = shipment_data.source_warehouse_id
-    shipment.destination_warehouse_id = shipment_data.destination_warehouse_id
-    shipment.status = shipment_data.status
-    shipment.delay_hours = shipment_data.delay_hours
-
-    db.commit()
-    db.refresh(shipment)
-
-    return shipment
-
+# =========================================
+# DELETE SHIPMENT
+# =========================================
 
 @router.delete("/{shipment_id}")
 def delete_shipment(shipment_id: int):
 
     db = SessionLocal()
 
-    shipment = db.query(Shipment).filter(
-        Shipment.id == shipment_id
-    ).first()
+    try:
 
-    if not shipment:
-        raise HTTPException(
-            status_code=404,
-            detail="Shipment not found"
-        )
+        shipment = db.query(Shipment).filter(
+            Shipment.id == shipment_id
+        ).first()
 
-    db.delete(shipment)
+        if not shipment:
 
-    db.commit()
+            raise HTTPException(
+                status_code=404,
+                detail="Shipment not found"
+            )
 
-    return {
-        "message": "Shipment deleted successfully"
-    }
+        db.delete(shipment)
+
+        db.commit()
+
+        return {
+            "message": "Shipment deleted successfully"
+        }
+
+    finally:
+        db.close()

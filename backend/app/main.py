@@ -6,6 +6,7 @@ from app.routes.warehouse import router as warehouse_router
 from app.models.shipments import Shipment
 from app.routes.shipments import router as shipment_router
 from app.routes.analytics import router as analytics_router
+from app.routes.inventory import router as inventory_router
 
 Base.metadata.create_all(bind=engine)
 
@@ -14,6 +15,7 @@ app = FastAPI()
 app.include_router(warehouse_router)
 app.include_router(shipment_router)
 app.include_router(analytics_router)
+app.include_router(inventory_router)
 
 @app.get("/", tags=["system"])
 def home():

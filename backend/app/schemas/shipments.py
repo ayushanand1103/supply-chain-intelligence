@@ -1,19 +1,25 @@
 from pydantic import BaseModel
-from datetime import datetime
 
 
 class ShipmentCreate(BaseModel):
 
     source_warehouse_id: int
+
     destination_warehouse_id: int
+
+    product_name: str
+
+    quantity: int
+
+    shipment_type: str
 
     status: str
 
-    delay_hours: int = 0
+    delay_hours: int
 
-    cost: float = 0
-    distance_km: float = 0
+    cost: float
 
+    distance_km: float
 
 
 class ShipmentResponse(ShipmentCreate):

@@ -228,3 +228,37 @@ def cost_analysis():
 
     finally:
         db.close()
+
+@router.get("/distance-analysis")
+def distance_analysis():
+
+    db = SessionLocal()
+
+    try:
+
+        shipments = db.query(Shipment).all()
+
+        total_distance = sum(
+            shipment.distance_km for shipment in shipments
+        )
+
+        average_distance = (
+            total_distance / len(shipments)
+            if shipments else 0
+        )
+
+        return {
+            "total_distance_covered": total_distance,
+            "average_distance": round(average_distance, 2)
+        }
+
+    finally:
+        db.close()
+
+
+    
+
+
+
+
+        
