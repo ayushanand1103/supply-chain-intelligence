@@ -8,6 +8,7 @@ from app.routes.shipments import router as shipment_router
 from app.routes.analytics import router as analytics_router
 from app.routes.inventory import router as inventory_router
 from app.routes.integration import router as integration_router
+from app.routes.external_api import router as external_api_router
 
 Base.metadata.create_all(bind=engine)
 
@@ -18,6 +19,7 @@ app.include_router(shipment_router)
 app.include_router(analytics_router)
 app.include_router(inventory_router)
 app.include_router(integration_router)
+app.include_router(external_api_router)
 
 @app.get("/", tags=["system"])
 def home():
