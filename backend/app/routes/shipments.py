@@ -4,11 +4,17 @@ from app.database import SessionLocal
 
 from app.models.shipments import Shipment
 from app.models.inventory import Inventory
+from app.models.warehouse import Warehouse
 
 from app.schemas.shipments import (
     ShipmentCreate,
     ShipmentResponse
 )
+
+from app.integration.external_api import (
+    get_route_data
+)
+
 
 router = APIRouter(
     prefix="/shipments",
@@ -28,15 +34,71 @@ def create_shipment(shipment: ShipmentCreate):
     try:
 
         # =====================================
+        # SOURCE WAREHOUSE
+        # =====================================
+
+        source_warehouse = db.query(Warehouse).filter(
+            Warehouse.id ==
+            shipment.source_warehouse_id
+        ).first()
+
+        if not source_warehouse:
+
+            raise HTTPException(
+                status_code=404,
+                detail="Source warehouse not found"
+            )
+
+        # =====================================
+        # DESTINATION WAREHOUSE
+        # =====================================
+
+        destination_warehouse = db.query(Warehouse).filter(
+            Warehouse.id ==
+            shipment.destination_warehouse_id
+        ).first()
+
+        if not destination_warehouse:
+
+            raise HTTPException(
+                status_code=404,
+                detail="Destination warehouse not found"
+            )
+
+        # =====================================
+        # ROUTE CALCULATION
+        # =====================================
+
+        route_data = get_route_data(
+
+            source_warehouse.latitude,
+            source_warehouse.longitude,
+
+            destination_warehouse.latitude,
+            destination_warehouse.longitude
+        )
+
+        distance_km = route_data["distance_km"]
+
+        estimated_time_hours = round(
+
+            route_data["estimated_time_minutes"] / 60,
+
+            2
+        )
+
+        # =====================================
         # CHECK SOURCE INVENTORY
         # =====================================
 
         source_inventory = db.query(Inventory).filter(
+
             Inventory.warehouse_id ==
             shipment.source_warehouse_id,
 
             Inventory.product_name ==
             shipment.product_name
+
         ).first()
 
         if not source_inventory:
@@ -50,7 +112,7 @@ def create_shipment(shipment: ShipmentCreate):
 
             raise HTTPException(
                 status_code=400,
-                detail="Not enough stock in source warehouse"
+                detail="Not enough stock available"
             )
 
         # =====================================
@@ -64,43 +126,79 @@ def create_shipment(shipment: ShipmentCreate):
         # =====================================
 
         destination_inventory = db.query(Inventory).filter(
+
             Inventory.warehouse_id ==
             shipment.destination_warehouse_id,
 
             Inventory.product_name ==
             shipment.product_name
+
         ).first()
 
-        # if product already exists in destination
         if destination_inventory:
 
             destination_inventory.quantity += shipment.quantity
 
         else:
 
-            # create new inventory entry
             new_inventory = Inventory(
-                warehouse_id=shipment.destination_warehouse_id,
-                product_name=shipment.product_name,
-                quantity=shipment.quantity
+
+                warehouse_id=
+                shipment.destination_warehouse_id,
+
+                product_name=
+                shipment.product_name,
+
+                quantity=
+                shipment.quantity
             )
 
             db.add(new_inventory)
+
+        # =====================================
+        # AUTO COST CALCULATION
+        # =====================================
+
+        estimated_cost = round(
+            distance_km * 8,
+            2
+        )
 
         # =====================================
         # CREATE SHIPMENT
         # =====================================
 
         new_shipment = Shipment(
-            source_warehouse_id=shipment.source_warehouse_id,
-            destination_warehouse_id=shipment.destination_warehouse_id,
-            product_name=shipment.product_name,
-            quantity=shipment.quantity,
-            shipment_type=shipment.shipment_type,
-            status=shipment.status,
-            delay_hours=shipment.delay_hours,
-            cost=shipment.cost,
-            distance_km=shipment.distance_km
+
+            source_warehouse_id=
+            shipment.source_warehouse_id,
+
+            destination_warehouse_id=
+            shipment.destination_warehouse_id,
+
+            product_name=
+            shipment.product_name,
+
+            quantity=
+            shipment.quantity,
+
+            shipment_type=
+            shipment.shipment_type,
+
+            status=
+            shipment.status,
+
+            delay_hours=
+            shipment.delay_hours,
+
+            cost=
+            estimated_cost,
+
+            distance_km=
+            distance_km,
+
+            estimated_time_hours=
+            estimated_time_hours
         )
 
         db.add(new_shipment)
@@ -113,8 +211,7 @@ def create_shipment(shipment: ShipmentCreate):
 
     finally:
         db.close()
-
-
+        
 # =========================================
 # GET ALL SHIPMENTS
 # =========================================

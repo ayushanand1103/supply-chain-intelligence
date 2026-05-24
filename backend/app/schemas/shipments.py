@@ -17,14 +17,15 @@ class ShipmentCreate(BaseModel):
 
     delay_hours: int
 
+class ShipmentResponse(ShipmentCreate):
+
+    id: int
+
     cost: float
 
     distance_km: float
 
-
-class ShipmentResponse(ShipmentCreate):
-
-    id: int
+    estimated_time_hours: float
 
     class Config:
         from_attributes = True

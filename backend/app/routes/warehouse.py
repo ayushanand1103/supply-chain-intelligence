@@ -5,39 +5,79 @@ from app.database import SessionLocal
 from app.models.warehouse import Warehouse
 from app.schemas.warehouse import WarehouseCreate, WarehouseResponse
 
+from app.integration.external_api import get_coordinates
+
 router = APIRouter(
     prefix="/warehouses",
     tags=["warehouses"]
 )
 
+
+
+# =========================================
+# CREATE WAREHOUSE
+# =========================================
+
 @router.post("/", response_model=WarehouseResponse)
-def create_warehouse(warehouse: WarehouseCreate):
+def create_warehouse(
+    warehouse: WarehouseCreate
+):
 
     db = SessionLocal()
 
-    existing_warehouse = db.query(Warehouse).filter(
-        Warehouse.name == warehouse.name
-    ).first()
+    try:
 
-    if existing_warehouse:
-        raise HTTPException(
-            status_code=400,
-            detail="Warehouse already exists"
+        # =====================================
+        # GET COORDINATES
+        # =====================================
+
+        location_data = get_coordinates(
+            warehouse.city
         )
 
-    db_warehouse = Warehouse(
-        name=warehouse.name,
-        city=warehouse.city,
-        capacity=warehouse.capacity
-    )
+        if "error" in location_data:
 
-    db.add(db_warehouse)
+            raise HTTPException(
+                status_code=400,
+                detail="Could not fetch coordinates"
+            )
 
-    db.commit()
+        latitude = float(
+            location_data["latitude"]
+        )
 
-    db.refresh(db_warehouse)
+        longitude = float(
+            location_data["longitude"]
+        )
 
-    return db_warehouse
+        # =====================================
+        # CREATE WAREHOUSE
+        # =====================================
+
+        new_warehouse = Warehouse(
+
+            name=warehouse.name,
+
+            city=warehouse.city,
+
+            capacity=warehouse.capacity,
+
+            latitude=latitude,
+
+            longitude=longitude
+        )
+
+        db.add(new_warehouse)
+
+        db.commit()
+
+        db.refresh(new_warehouse)
+
+        return new_warehouse
+
+    finally:
+        db.close()
+
 
 @router.get("/", response_model=list[WarehouseResponse])
 def get_warehouses():

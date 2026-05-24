@@ -1,4 +1,6 @@
 source_warehouse_id,destination_warehouse_id,product_name,quantity,shipment_type,status,delay_hours,cost,distance_km
-1,2,Laptops,200,transfer,In Transit,4,12000,1400
-2,3,Monitors,100,transfer,Delayed,28,8000,900
-1,3,Laptops,300,transfer,Delivered,0,15000,1800
+2,3,Laptops,500,Transfer,In Transit,4,12000,1400
+2,3,Phones,300,Transfer,Pending,2,8000,950
+3,2,Tablets,200,Transfer,Delivered,0,5000,700
+1,3,Monitors,150,Transfer,Delayed,12,6000,1200
+1,2,Printers,100,Transfer,In Transit,6,4000,850

@@ -30,19 +30,47 @@ class Shipment(Base):
         nullable=False
     )
 
-    product_name = Column(String, nullable=False)
+    product_name = Column(
+        String,
+        nullable=False
+    )
 
-    quantity = Column(Integer, nullable=False)
+    quantity = Column(
+        Integer,
+        nullable=False
+    )
 
-    shipment_type = Column(String, nullable=False)
+    shipment_type = Column(
+        String,
+        nullable=False
+    )
 
-    status = Column(String, nullable=False)
+    status = Column(
+        String,
+        nullable=False
+    )
 
-    delay_hours = Column(Integer, default=0)
+    delay_hours = Column(
+        Integer,
+        default=0
+    )
 
-    cost = Column(Float, default=0)
+    cost = Column(
+        Float,
+        default=0
+    )
 
-    distance_km = Column(Float, default=0)
+    # AUTO GENERATED FROM OSRM
+    distance_km = Column(
+        Float,
+        default=0
+    )
+
+    # AUTO GENERATED FROM OSRM
+    estimated_time_hours = Column(
+        Float,
+        default=0
+    )
 
     created_at = Column(
         DateTime,
