@@ -11,6 +11,12 @@ router = APIRouter(
 
 
 @router.get("/weather")
-def weather():
+def weather(
+    latitude: float,
+    longitude: float
+):
 
-    return get_weather()
+    return get_weather(
+        latitude,
+        longitude
+    )

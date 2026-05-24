@@ -24,3 +24,13 @@ app.include_router(external_api_router)
 @app.get("/", tags=["system"])
 def home():
     return {"message": "Supply Chain Intelligence API"}
+
+from fastapi.middleware.cors import CORSMiddleware
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)

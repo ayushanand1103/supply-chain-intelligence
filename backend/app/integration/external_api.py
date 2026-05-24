@@ -1,12 +1,15 @@
 import requests
 
 
-def get_weather():
+def get_weather(
+    latitude: float,
+    longitude: float
+):
 
     url = (
         "https://api.open-meteo.com/v1/forecast"
-        "?latitude=28.61"
-        "&longitude=77.23"
+        f"?latitude={latitude}"
+        f"&longitude={longitude}"
         "&current_weather=true"
     )
 
@@ -18,9 +21,17 @@ def get_weather():
 
     return {
 
+        "latitude": latitude,
+
+        "longitude": longitude,
+
         "temperature": current["temperature"],
 
         "wind_speed": current["windspeed"],
 
-        "weather_code": current["weathercode"]
+        "wind_direction": current["winddirection"],
+
+        "weather_code": current["weathercode"],
+
+        "time": current["time"]
     }

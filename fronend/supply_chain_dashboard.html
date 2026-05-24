@@ -1,0 +1,731 @@
+
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0d0f12;
+    --surface: #141720;
+    --surface2: #1c2030;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.13);
+    --text: #e8eaf0;
+    --muted: #7a8099;
+    --accent: #3b82f6;
+    --accent2: #60a5fa;
+    --success: #22c55e;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --info: #06b6d4;
+  }
+  body { background: var(--bg); color: var(--text); font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: 13px; min-height: 100vh; }
+  .shell { display: grid; grid-template-columns: 200px 1fr; min-height: 100vh; }
+  .sidebar { background: var(--surface); border-right: 1px solid var(--border); padding: 0; display: flex; flex-direction: column; }
+  .logo { padding: 20px 16px 16px; border-bottom: 1px solid var(--border); }
+  .logo-text { font-size: 11px; font-weight: 700; letter-spacing: 0.15em; color: var(--accent2); text-transform: uppercase; }
+  .logo-sub { font-size: 10px; color: var(--muted); letter-spacing: 0.05em; margin-top: 2px; }
+  .nav { padding: 12px 0; flex: 1; }
+  .nav-item { display: flex; align-items: center; gap: 8px; padding: 9px 16px; cursor: pointer; color: var(--muted); font-size: 12px; letter-spacing: 0.03em; transition: all 0.15s; border-left: 2px solid transparent; }
+  .nav-item:hover { color: var(--text); background: rgba(255,255,255,0.04); }
+  .nav-item.active { color: var(--accent2); border-left-color: var(--accent); background: rgba(59,130,246,0.08); }
+  .nav-item i { font-size: 15px; }
+  .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--success); margin-left: auto; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+  .main { display: flex; flex-direction: column; overflow: hidden; }
+  .topbar { display: flex; align-items: center; justify-content: space-between; padding: 14px 24px; border-bottom: 1px solid var(--border); background: var(--surface); }
+  .page-title { font-size: 13px; font-weight: 600; letter-spacing: 0.05em; color: var(--text); text-transform: uppercase; }
+  .topbar-right { display: flex; align-items: center; gap: 12px; }
+  .badge { font-size: 10px; padding: 3px 8px; border-radius: 4px; font-weight: 600; letter-spacing: 0.05em; }
+  .badge-live { background: rgba(34,197,94,0.15); color: var(--success); border: 1px solid rgba(34,197,94,0.3); }
+  .timestamp { font-size: 11px; color: var(--muted); }
+  .content { padding: 20px 24px; overflow-y: auto; flex: 1; }
+  .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+  .kpi-card { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 16px; position: relative; overflow: hidden; }
+  .kpi-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--card-accent, var(--accent)); }
+  .kpi-label { font-size: 10px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 8px; }
+  .kpi-value { font-size: 26px; font-weight: 700; color: var(--text); line-height: 1; }
+  .kpi-sub { font-size: 10px; color: var(--muted); margin-top: 6px; display: flex; align-items: center; gap: 4px; }
+  .kpi-sub.up { color: var(--success); }
+  .kpi-sub.warn { color: var(--warning); }
+  .kpi-sub.danger { color: var(--danger); }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+  .panel-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+  .panel-title { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+  .panel-body { padding: 16px; }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th { text-align: left; padding: 8px 12px; font-size: 10px; color: var(--muted); font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; border-bottom: 1px solid var(--border); }
+  td { padding: 9px 12px; border-bottom: 1px solid var(--border); color: var(--text); }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+  .status-pill { display: inline-block; padding: 2px 7px; border-radius: 3px; font-size: 10px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; }
+  .pill-delivered { background: rgba(34,197,94,0.12); color: var(--success); }
+  .pill-transit { background: rgba(59,130,246,0.12); color: var(--accent2); }
+  .pill-pending { background: rgba(245,158,11,0.12); color: var(--warning); }
+  .pill-delayed { background: rgba(239,68,68,0.12); color: var(--danger); }
+  .risk-bar { height: 4px; background: var(--surface2); border-radius: 2px; overflow: hidden; margin-top: 2px; }
+  .risk-fill { height: 100%; border-radius: 2px; }
+  .chart-container { position: relative; width: 100%; height: 180px; }
+  .empty-state { text-align: center; padding: 32px; color: var(--muted); font-size: 12px; }
+  .loading { color: var(--muted); font-size: 11px; padding: 20px; text-align: center; animation: blink 1s infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.4} }
+  .refresh-btn { background: rgba(59,130,246,0.12); border: 1px solid rgba(59,130,246,0.3); color: var(--accent2); padding: 5px 12px; border-radius: 4px; font-size: 10px; font-weight: 600; letter-spacing: 0.05em; cursor: pointer; text-transform: uppercase; font-family: inherit; }
+  .refresh-btn:hover { background: rgba(59,130,246,0.2); }
+  .alert-item { display: flex; align-items: flex-start; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .alert-item:last-child { border-bottom: none; }
+  .alert-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 3px; flex-shrink: 0; }
+  .alert-text { font-size: 12px; color: var(--text); }
+  .alert-time { font-size: 10px; color: var(--muted); margin-top: 2px; }
+  .mini-stat { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 12px; }
+  .mini-stat:last-child { border-bottom: none; }
+  .mini-val { font-weight: 600; color: var(--accent2); }
+  .section-wide { margin-bottom: 16px; }
+  .inv-row { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+  .inv-row:last-child { border-bottom: none; }
+  .inv-name { flex: 1; font-size: 12px; }
+  .inv-stock { font-size: 12px; font-weight: 600; min-width: 60px; text-align: right; }
+  .stock-bar { flex: 1; height: 3px; background: var(--surface2); border-radius: 2px; overflow: hidden; }
+  .stock-fill { height: 100%; border-radius: 2px; }
+  .tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); }
+  .tab { padding: 10px 16px; font-size: 11px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; cursor: pointer; color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  .tab.active { color: var(--accent2); border-bottom-color: var(--accent); }
+  .tab-content { display: none; padding: 16px; }
+  .tab-content.active { display: block; }
+  .hidden { display: none; }
+  .page { display: none; }
+  .page.active { display: block; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+  .form-field { display: flex; flex-direction: column; gap: 4px; }
+  label { font-size: 10px; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; }
+  input, select { background: var(--surface2); border: 1px solid var(--border2); color: var(--text); padding: 8px 10px; border-radius: 4px; font-size: 12px; font-family: inherit; outline: none; }
+  input:focus, select:focus { border-color: var(--accent); }
+  .submit-btn { background: var(--accent); border: none; color: white; padding: 9px 20px; border-radius: 4px; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; font-family: inherit; margin-top: 4px; }
+  .submit-btn:hover { background: #2563eb; }
+  .toast { position: fixed; bottom: 20px; right: 20px; background: var(--surface); border: 1px solid var(--border2); padding: 12px 16px; border-radius: 6px; font-size: 12px; color: var(--text); z-index: 999; opacity: 0; transition: opacity 0.3s; }
+  .toast.show { opacity: 1; }
+</style>
+
+<div class="shell">
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-text">NSCI Platform</div>
+      <div class="logo-sub">Supply Chain Ops</div>
+    </div>
+    <nav class="nav">
+      <div class="nav-item active" onclick="navigate('dashboard')">
+        <i class="ti ti-layout-dashboard" aria-hidden="true"></i> Dashboard
+        <span class="status-dot"></span>
+      </div>
+      <div class="nav-item" onclick="navigate('warehouses')">
+        <i class="ti ti-building-warehouse" aria-hidden="true"></i> Warehouses
+      </div>
+      <div class="nav-item" onclick="navigate('shipments')">
+        <i class="ti ti-truck" aria-hidden="true"></i> Shipments
+      </div>
+      <div class="nav-item" onclick="navigate('inventory')">
+        <i class="ti ti-packages" aria-hidden="true"></i> Inventory
+      </div>
+      <div class="nav-item" onclick="navigate('analytics')">
+        <i class="ti ti-chart-line" aria-hidden="true"></i> Analytics
+      </div>
+    </nav>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div class="page-title" id="page-title">Operational Dashboard</div>
+      <div class="topbar-right">
+        <span class="badge badge-live">● LIVE</span>
+        <span class="timestamp" id="clock"></span>
+        <button class="refresh-btn" onclick="refreshAll()"><i class="ti ti-refresh" aria-hidden="true"></i> Refresh</button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- DASHBOARD PAGE -->
+      <div class="page active" id="page-dashboard">
+        <div class="kpi-row" id="kpi-row">
+          <div class="kpi-card" style="--card-accent:#3b82f6">
+            <div class="kpi-label">Total Warehouses</div>
+            <div class="kpi-value" id="kpi-warehouses">—</div>
+            <div class="kpi-sub"><i class="ti ti-building-warehouse"></i> operational nodes</div>
+          </div>
+          <div class="kpi-card" style="--card-accent:#22c55e">
+            <div class="kpi-label">Total Shipments</div>
+            <div class="kpi-value" id="kpi-shipments">—</div>
+            <div class="kpi-sub" id="kpi-ship-sub"><i class="ti ti-truck"></i> loading...</div>
+          </div>
+          <div class="kpi-card" style="--card-accent:#f59e0b">
+            <div class="kpi-label">High Risk</div>
+            <div class="kpi-value" id="kpi-highrisk">—</div>
+            <div class="kpi-sub danger" id="kpi-risk-sub"><i class="ti ti-alert-triangle"></i> needs attention</div>
+          </div>
+          <div class="kpi-card" style="--card-accent:#06b6d4">
+            <div class="kpi-label">Delayed</div>
+            <div class="kpi-value" id="kpi-delayed">—</div>
+            <div class="kpi-sub warn"><i class="ti ti-clock"></i> behind schedule</div>
+          </div>
+        </div>
+
+        <div class="grid2">
+          <div class="panel">
+            <div class="panel-header">
+              <span class="panel-title">Shipment Status Distribution</span>
+            </div>
+            <div class="panel-body">
+              <div id="status-summary-content"><div class="loading">fetching data...</div></div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-header">
+              <span class="panel-title">Cost Analysis</span>
+            </div>
+            <div class="panel-body">
+              <div id="cost-content"><div class="loading">fetching data...</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid2 section-wide">
+          <div class="panel">
+            <div class="panel-header">
+              <span class="panel-title">Recent Shipments</span>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>ID</th><th>Origin → Dest</th><th>Status</th><th>Risk</th></tr></thead>
+                <tbody id="recent-shipments-body"><tr><td colspan="4"><div class="loading">loading...</div></td></tr></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-header">
+              <span class="panel-title">Warehouse Utilization</span>
+            </div>
+            <div class="panel-body">
+              <div id="utilization-content"><div class="loading">fetching data...</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid3">
+          <div class="panel">
+            <div class="panel-header"><span class="panel-title">Bottlenecks</span></div>
+            <div class="panel-body" id="bottleneck-content"><div class="loading">analyzing...</div></div>
+          </div>
+          <div class="panel">
+            <div class="panel-header"><span class="panel-title">Distance Analysis</span></div>
+            <div class="panel-body" id="distance-content"><div class="loading">fetching...</div></div>
+          </div>
+          <div class="panel">
+            <div class="panel-header"><span class="panel-title">Inventory Alerts</span></div>
+            <div class="panel-body" id="inv-alerts-content"><div class="loading">scanning...</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- WAREHOUSES PAGE -->
+      <div class="page" id="page-warehouses">
+        <div class="grid2" style="margin-bottom:16px">
+          <div class="panel">
+            <div class="panel-header"><span class="panel-title">Add Warehouse</span></div>
+            <div class="panel-body">
+              <div class="form-row">
+                <div class="form-field"><label>Name</label><input id="wh-name" placeholder="Warehouse name" /></div>
+                <div class="form-field"><label>City</label><input id="wh-city" placeholder="City" /></div>
+              </div>
+              <div class="form-row">
+                <div class="form-field"><label>Capacity</label><input id="wh-cap" type="number" placeholder="e.g. 5000" /></div>
+              </div>
+              <button class="submit-btn" onclick="createWarehouse()">Create Warehouse</button>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-header"><span class="panel-title">Overview</span></div>
+            <div class="panel-body" id="wh-overview"><div class="loading">loading...</div></div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-header"><span class="panel-title">All Warehouses</span></div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>ID</th><th>Name</th><th>City</th><th>Capacity</th><th>Actions</th></tr></thead>
+              <tbody id="wh-table-body"><tr><td colspan="5"><div class="loading">loading...</div></td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- SHIPMENTS PAGE -->
+      <div class="page" id="page-shipments">
+        <div class="panel" style="margin-bottom:16px">
+          <div class="panel-header"><span class="panel-title">Add Shipment</span></div>
+          <div class="panel-body">
+            <div class="form-row">
+              <div class="form-field"><label>Tracking Number</label><input id="sh-tracking" placeholder="TRK-001" /></div>
+              <div class="form-field"><label>Origin</label><input id="sh-origin" placeholder="City" /></div>
+            </div>
+            <div class="form-row">
+              <div class="form-field"><label>Destination</label><input id="sh-dest" placeholder="City" /></div>
+              <div class="form-field"><label>Status</label>
+                <select id="sh-status">
+                  <option value="pending">Pending</option>
+                  <option value="in_transit">In Transit</option>
+                  <option value="delivered">Delivered</option>
+                  <option value="delayed">Delayed</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-field"><label>Weight (kg)</label><input id="sh-weight" type="number" placeholder="100" /></div>
+              <div class="form-field"><label>Cost</label><input id="sh-cost" type="number" placeholder="5000" /></div>
+            </div>
+            <div class="form-row">
+              <div class="form-field"><label>Distance (km)</label><input id="sh-distance" type="number" placeholder="200" /></div>
+              <div class="form-field"><label>Warehouse ID</label><input id="sh-wh" type="number" placeholder="1" /></div>
+            </div>
+            <button class="submit-btn" onclick="createShipment()">Create Shipment</button>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-header"><span class="panel-title">All Shipments</span></div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Tracking</th><th>Origin → Dest</th><th>Status</th><th>Weight</th><th>Cost</th><th>Risk Score</th></tr></thead>
+              <tbody id="sh-table-body"><tr><td colspan="6"><div class="loading">loading...</div></td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- INVENTORY PAGE -->
+      <div class="page" id="page-inventory">
+        <div class="grid2" style="margin-bottom:16px">
+          <div class="panel">
+            <div class="panel-header"><span class="panel-title">Add Inventory</span></div>
+            <div class="panel-body">
+              <div class="form-row">
+                <div class="form-field"><label>Product Name</label><input id="inv-name" placeholder="Product name" /></div>
+                <div class="form-field"><label>SKU</label><input id="inv-sku" placeholder="SKU-001" /></div>
+              </div>
+              <div class="form-row">
+                <div class="form-field"><label>Quantity</label><input id="inv-qty" type="number" placeholder="100" /></div>
+                <div class="form-field"><label>Min Stock</label><input id="inv-min" type="number" placeholder="10" /></div>
+              </div>
+              <div class="form-row">
+                <div class="form-field"><label>Warehouse ID</label><input id="inv-wh" type="number" placeholder="1" /></div>
+              </div>
+              <button class="submit-btn" onclick="createInventory()">Add Inventory</button>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-header"><span class="panel-title">Inventory Alerts</span></div>
+            <div class="panel-body" id="inv-page-alerts"><div class="loading">scanning...</div></div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-header"><span class="panel-title">All Inventory</span></div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>ID</th><th>Product</th><th>SKU</th><th>Quantity</th><th>Min Stock</th><th>Warehouse</th><th>Status</th></tr></thead>
+              <tbody id="inv-table-body"><tr><td colspan="7"><div class="loading">loading...</div></td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ANALYTICS PAGE -->
+      <div class="page" id="page-analytics">
+        <div class="kpi-row" style="margin-bottom:16px">
+          <div class="kpi-card" style="--card-accent:#3b82f6">
+            <div class="kpi-label">Avg Cost/Shipment</div>
+            <div class="kpi-value" id="an-avg-cost">—</div>
+          </div>
+          <div class="kpi-card" style="--card-accent:#22c55e">
+            <div class="kpi-label">Total Revenue</div>
+            <div class="kpi-value" id="an-total-cost">—</div>
+          </div>
+          <div class="kpi-card" style="--card-accent:#f59e0b">
+            <div class="kpi-label">Avg Distance</div>
+            <div class="kpi-value" id="an-avg-dist">—</div>
+          </div>
+          <div class="kpi-card" style="--card-accent:#ef4444">
+            <div class="kpi-label">Max Risk Score</div>
+            <div class="kpi-value" id="an-max-risk">—</div>
+          </div>
+        </div>
+        <div class="grid2">
+          <div class="panel">
+            <div class="panel-header"><span class="panel-title">Risk Scores — All Shipments</span></div>
+            <div class="panel-body">
+              <div class="chart-container">
+                <canvas id="riskChart" role="img" aria-label="Bar chart of shipment risk scores">Risk score data</canvas>
+              </div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-header"><span class="panel-title">Status Breakdown</span></div>
+            <div class="panel-body">
+              <div class="chart-container">
+                <canvas id="statusChart" role="img" aria-label="Doughnut chart of shipment statuses">Status breakdown</canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="panel" style="margin-top:16px">
+          <div class="panel-header"><span class="panel-title">High Risk Shipments — Detail</span></div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Tracking</th><th>Origin</th><th>Destination</th><th>Status</th><th>Risk Score</th><th>Cost</th></tr></thead>
+              <tbody id="hr-table-body"><tr><td colspan="6"><div class="loading">loading...</div></td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const API = 'http://127.0.0.1:8000';
+let riskChartInstance = null;
+let statusChartInstance = null;
+
+function clock() {
+  const now = new Date();
+  document.getElementById('clock').textContent = now.toLocaleTimeString('en-IN', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+setInterval(clock, 1000); clock();
+
+function showToast(msg, ok=true) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.borderLeftColor = ok ? 'var(--success)' : 'var(--danger)';
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 3000);
+}
+
+async function get(path) {
+  try {
+    const r = await fetch(API+path);
+    if(!r.ok) throw new Error(r.status);
+    return await r.json();
+  } catch(e) { return null; }
+}
+
+async function post(path, data) {
+  try {
+    const r = await fetch(API+path, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+    if(!r.ok) { const e = await r.json(); throw new Error(JSON.stringify(e)); }
+    return await r.json();
+  } catch(e) { throw e; }
+}
+
+function statusPill(s) {
+  const map = {delivered:'pill-delivered',in_transit:'pill-transit',pending:'pill-pending',delayed:'pill-delayed'};
+  return `<span class="status-pill ${map[s]||'pill-pending'}">${s||'unknown'}</span>`;
+}
+
+function riskColor(score) {
+  if(score >= 70) return 'var(--danger)';
+  if(score >= 40) return 'var(--warning)';
+  return 'var(--success)';
+}
+
+function fmtNum(n) { return n != null ? Number(n).toLocaleString('en-IN') : '—'; }
+
+async function loadDashboard() {
+  const [whs, ships, overview, status, cost, highrisk, delays, bottleneck, utilization, distance, invAlerts] = await Promise.all([
+    get('/warehouses/'), get('/shipments/'), get('/analytics/overview'),
+    get('/analytics/status-summary'), get('/analytics/cost-analysis'),
+    get('/analytics/high-risk'), get('/analytics/delays'),
+    get('/analytics/bottlenecks'), get('/analytics/warehouse-utilization'),
+    get('/analytics/distance-analysis'), get('/analytics/inventory-alerts')
+  ]);
+
+  document.getElementById('kpi-warehouses').textContent = whs ? whs.length : '—';
+  document.getElementById('kpi-shipments').textContent = ships ? ships.length : '—';
+  if(ships) {
+    const inTransit = ships.filter(s=>s.status==='in_transit').length;
+    document.getElementById('kpi-ship-sub').innerHTML = `<i class="ti ti-truck"></i> ${inTransit} in transit`;
+  }
+  document.getElementById('kpi-highrisk').textContent = highrisk ? highrisk.length : '—';
+  document.getElementById('kpi-delayed').textContent = delays ? delays.length : '—';
+
+  if(status && Array.isArray(status)) {
+    const html = status.map(s=>`
+      <div class="mini-stat">
+        <span>${statusPill(s.status)}</span>
+        <span class="mini-val">${s.count}</span>
+      </div>`).join('');
+    document.getElementById('status-summary-content').innerHTML = html || '<div class="empty-state">No data</div>';
+  }
+
+  if(cost) {
+    document.getElementById('cost-content').innerHTML = `
+      <div class="mini-stat"><span>Total Cost</span><span class="mini-val">₹${fmtNum(cost.total_cost)}</span></div>
+      <div class="mini-stat"><span>Avg Cost/Shipment</span><span class="mini-val">₹${fmtNum(Math.round(cost.average_cost))}</span></div>
+      <div class="mini-stat"><span>Max Cost</span><span class="mini-val">₹${fmtNum(cost.max_cost)}</span></div>
+      <div class="mini-stat"><span>Min Cost</span><span class="mini-val">₹${fmtNum(cost.min_cost)}</span></div>
+    `;
+  }
+
+  if(ships && ships.length > 0) {
+    const recent = ships.slice(-6).reverse();
+    document.getElementById('recent-shipments-body').innerHTML = recent.map(s=>`
+      <tr>
+        <td style="color:var(--accent2);font-weight:600">#${s.id}</td>
+        <td>${s.origin||'—'} → ${s.destination||'—'}</td>
+        <td>${statusPill(s.status)}</td>
+        <td>
+          <div style="font-size:11px;color:${riskColor(s.risk_score||0)}">${Math.round(s.risk_score||0)}</div>
+          <div class="risk-bar"><div class="risk-fill" style="width:${Math.min(s.risk_score||0,100)}%;background:${riskColor(s.risk_score||0)}"></div></div>
+        </td>
+      </tr>`).join('');
+  } else {
+    document.getElementById('recent-shipments-body').innerHTML = '<tr><td colspan="4"><div class="empty-state">No shipments yet</div></td></tr>';
+  }
+
+  if(utilization && Array.isArray(utilization)) {
+    const html = utilization.map(u=>{
+      const pct = Math.min(Math.round((u.used_capacity||0)/(u.total_capacity||1)*100),100);
+      const col = pct>80?'var(--danger)':pct>50?'var(--warning)':'var(--success)';
+      return `<div class="inv-row">
+        <div class="inv-name">${u.warehouse_name||'Warehouse'}</div>
+        <div class="stock-bar" style="flex:1"><div class="stock-fill" style="width:${pct}%;background:${col}"></div></div>
+        <div class="inv-stock" style="color:${col}">${pct}%</div>
+      </div>`;
+    }).join('');
+    document.getElementById('utilization-content').innerHTML = html || '<div class="empty-state">No data</div>';
+  } else {
+    document.getElementById('utilization-content').innerHTML = '<div class="empty-state">No warehouse data</div>';
+  }
+
+  if(bottleneck && Array.isArray(bottleneck) && bottleneck.length > 0) {
+    document.getElementById('bottleneck-content').innerHTML = bottleneck.map(b=>`
+      <div class="alert-item">
+        <div class="alert-dot" style="background:var(--danger)"></div>
+        <div><div class="alert-text">${b.location||b.city||JSON.stringify(b)}</div>
+        <div class="alert-time">${b.count||b.delayed_count||''} delayed shipments</div></div>
+      </div>`).join('');
+  } else {
+    document.getElementById('bottleneck-content').innerHTML = '<div class="empty-state" style="color:var(--success)"><i class="ti ti-check"></i> No bottlenecks detected</div>';
+  }
+
+  if(distance) {
+    document.getElementById('distance-content').innerHTML = `
+      <div class="mini-stat"><span>Avg Distance</span><span class="mini-val">${Math.round(distance.average_distance||0)} km</span></div>
+      <div class="mini-stat"><span>Total Distance</span><span class="mini-val">${fmtNum(Math.round(distance.total_distance||0))} km</span></div>
+      <div class="mini-stat"><span>Max Route</span><span class="mini-val">${Math.round(distance.max_distance||0)} km</span></div>
+      <div class="mini-stat"><span>Min Route</span><span class="mini-val">${Math.round(distance.min_distance||0)} km</span></div>
+    `;
+  } else {
+    document.getElementById('distance-content').innerHTML = '<div class="empty-state">No data</div>';
+  }
+
+  if(invAlerts && Array.isArray(invAlerts) && invAlerts.length > 0) {
+    document.getElementById('inv-alerts-content').innerHTML = invAlerts.slice(0,5).map(a=>`
+      <div class="alert-item">
+        <div class="alert-dot" style="background:var(--warning)"></div>
+        <div><div class="alert-text">${a.product_name||a.name||'Item'}</div>
+        <div class="alert-time">Stock: ${a.current_stock||a.quantity||0} / Min: ${a.minimum_stock||a.min_stock||0}</div></div>
+      </div>`).join('');
+  } else {
+    document.getElementById('inv-alerts-content').innerHTML = '<div class="empty-state" style="color:var(--success)"><i class="ti ti-check"></i> All stock levels OK</div>';
+  }
+}
+
+async function loadWarehouses() {
+  const whs = await get('/warehouses/');
+  if(!whs) { document.getElementById('wh-table-body').innerHTML = '<tr><td colspan="5"><div class="empty-state">Could not connect to backend</div></td></tr>'; return; }
+  document.getElementById('wh-overview').innerHTML = `
+    <div class="mini-stat"><span>Total Warehouses</span><span class="mini-val">${whs.length}</span></div>
+    <div class="mini-stat"><span>Total Capacity</span><span class="mini-val">${fmtNum(whs.reduce((a,w)=>a+(w.capacity||0),0))}</span></div>
+  `;
+  document.getElementById('wh-table-body').innerHTML = whs.length > 0 ? whs.map(w=>`
+    <tr>
+      <td style="color:var(--muted)">${w.id}</td>
+      <td style="font-weight:600">${w.name}</td>
+      <td>${w.city||'—'}</td>
+      <td>${fmtNum(w.capacity)}</td>
+      <td><button onclick="deleteWarehouse(${w.id})" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:var(--danger);padding:3px 8px;border-radius:3px;font-size:10px;cursor:pointer;font-family:inherit">Delete</button></td>
+    </tr>`).join('') : '<tr><td colspan="5"><div class="empty-state">No warehouses found</div></td></tr>';
+}
+
+async function loadShipments() {
+  const ships = await get('/shipments/');
+  if(!ships) { document.getElementById('sh-table-body').innerHTML = '<tr><td colspan="6"><div class="empty-state">Could not connect to backend</div></td></tr>'; return; }
+  document.getElementById('sh-table-body').innerHTML = ships.length > 0 ? ships.map(s=>`
+    <tr>
+      <td style="color:var(--accent2);font-weight:600">${s.tracking_number||'—'}</td>
+      <td>${s.origin||'—'} → ${s.destination||'—'}</td>
+      <td>${statusPill(s.status)}</td>
+      <td>${s.weight_kg||s.weight||'—'} kg</td>
+      <td>₹${fmtNum(s.cost)}</td>
+      <td style="color:${riskColor(s.risk_score||0)};font-weight:600">${Math.round(s.risk_score||0)}</td>
+    </tr>`).join('') : '<tr><td colspan="6"><div class="empty-state">No shipments found</div></td></tr>';
+}
+
+async function loadInventory() {
+  const inv = await get('/inventory/');
+  const alerts = await get('/analytics/inventory-alerts');
+  if(alerts && Array.isArray(alerts) && alerts.length > 0) {
+    document.getElementById('inv-page-alerts').innerHTML = alerts.map(a=>`
+      <div class="alert-item">
+        <div class="alert-dot" style="background:var(--warning)"></div>
+        <div><div class="alert-text">${a.product_name||a.name||'Item'}</div>
+        <div class="alert-time">Stock: ${a.current_stock||a.quantity||0} / Min: ${a.minimum_stock||a.min_stock||0}</div></div>
+      </div>`).join('');
+  } else {
+    document.getElementById('inv-page-alerts').innerHTML = '<div class="empty-state" style="color:var(--success)"><i class="ti ti-check"></i> All stock levels OK</div>';
+  }
+  if(!inv) { document.getElementById('inv-table-body').innerHTML = '<tr><td colspan="7"><div class="empty-state">Could not connect</div></td></tr>'; return; }
+  document.getElementById('inv-table-body').innerHTML = inv.length > 0 ? inv.map(i=>{
+    const low = i.quantity <= (i.min_stock||0);
+    return `<tr>
+      <td style="color:var(--muted)">${i.id}</td>
+      <td style="font-weight:600">${i.product_name||i.name||'—'}</td>
+      <td style="color:var(--muted)">${i.sku||'—'}</td>
+      <td>${fmtNum(i.quantity)}</td>
+      <td>${fmtNum(i.min_stock||i.minimum_stock)}</td>
+      <td>${i.warehouse_id||'—'}</td>
+      <td>${low?'<span class="status-pill pill-delayed">Low Stock</span>':'<span class="status-pill pill-delivered">OK</span>'}</td>
+    </tr>`;}).join('') : '<tr><td colspan="7"><div class="empty-state">No inventory found</div></td></tr>';
+}
+
+async function loadAnalytics() {
+  const [risks, status, cost, distance, highrisk] = await Promise.all([
+    get('/analytics/risk-scores'), get('/analytics/status-summary'),
+    get('/analytics/cost-analysis'), get('/analytics/distance-analysis'),
+    get('/analytics/high-risk')
+  ]);
+
+  if(cost) {
+    document.getElementById('an-avg-cost').textContent = '₹'+fmtNum(Math.round(cost.average_cost||0));
+    document.getElementById('an-total-cost').textContent = '₹'+fmtNum(Math.round(cost.total_cost||0));
+    document.getElementById('an-avg-dist').textContent = Math.round(distance?.average_distance||0)+' km';
+  }
+
+  if(risks && Array.isArray(risks) && risks.length > 0) {
+    const maxR = Math.max(...risks.map(r=>r.risk_score||0));
+    document.getElementById('an-max-risk').textContent = Math.round(maxR);
+    const labels = risks.map(r=>r.tracking_number||`#${r.id}`);
+    const vals = risks.map(r=>Math.round(r.risk_score||0));
+    const colors = vals.map(v=>v>=70?'#ef4444':v>=40?'#f59e0b':'#22c55e');
+    if(riskChartInstance) riskChartInstance.destroy();
+    riskChartInstance = new Chart(document.getElementById('riskChart'), {
+      type:'bar',
+      data:{labels,datasets:[{label:'Risk Score',data:vals,backgroundColor:colors,borderRadius:3}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,max:100,grid:{color:'rgba(255,255,255,0.05)'},ticks:{color:'#7a8099',font:{size:10}}},x:{grid:{display:false},ticks:{color:'#7a8099',font:{size:10},maxRotation:45}}}}
+    });
+  }
+
+  if(status && Array.isArray(status) && status.length > 0) {
+    const statusColors = {delivered:'#22c55e',in_transit:'#3b82f6',pending:'#f59e0b',delayed:'#ef4444'};
+    const labels = status.map(s=>s.status);
+    const vals = status.map(s=>s.count);
+    const colors = labels.map(l=>statusColors[l]||'#7a8099');
+    if(statusChartInstance) statusChartInstance.destroy();
+    statusChartInstance = new Chart(document.getElementById('statusChart'), {
+      type:'doughnut',
+      data:{labels,datasets:[{data:vals,backgroundColor:colors,borderWidth:0,hoverOffset:4}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},cutout:'65%'}
+    });
+  }
+
+  if(highrisk && Array.isArray(highrisk)) {
+    document.getElementById('hr-table-body').innerHTML = highrisk.length > 0 ? highrisk.map(s=>`
+      <tr>
+        <td style="color:var(--accent2)">${s.tracking_number||'—'}</td>
+        <td>${s.origin||'—'}</td>
+        <td>${s.destination||'—'}</td>
+        <td>${statusPill(s.status)}</td>
+        <td style="color:var(--danger);font-weight:700">${Math.round(s.risk_score||0)}</td>
+        <td>₹${fmtNum(s.cost)}</td>
+      </tr>`).join('') : '<tr><td colspan="6"><div class="empty-state" style="color:var(--success)">No high-risk shipments</div></td></tr>';
+  }
+}
+
+async function createWarehouse() {
+  const name = document.getElementById('wh-name').value.trim();
+  const city = document.getElementById('wh-city').value.trim();
+  const capacity = parseInt(document.getElementById('wh-cap').value);
+  if(!name||!city||!capacity) { showToast('Fill all fields', false); return; }
+  try {
+    await post('/warehouses/', {name,city,capacity});
+    showToast('Warehouse created');
+    document.getElementById('wh-name').value=''; document.getElementById('wh-city').value=''; document.getElementById('wh-cap').value='';
+    loadWarehouses();
+  } catch(e) { showToast('Error: '+e.message, false); }
+}
+
+async function deleteWarehouse(id) {
+  try {
+    await fetch(API+'/warehouses/'+id, {method:'DELETE'});
+    showToast('Warehouse deleted');
+    loadWarehouses();
+  } catch(e) { showToast('Delete failed', false); }
+}
+
+async function createShipment() {
+  const tracking_number = document.getElementById('sh-tracking').value.trim();
+  const origin = document.getElementById('sh-origin').value.trim();
+  const destination = document.getElementById('sh-dest').value.trim();
+  const status = document.getElementById('sh-status').value;
+  const weight_kg = parseFloat(document.getElementById('sh-weight').value)||null;
+  const cost = parseFloat(document.getElementById('sh-cost').value)||null;
+  const distance_km = parseFloat(document.getElementById('sh-distance').value)||null;
+  const warehouse_id = parseInt(document.getElementById('sh-wh').value)||null;
+  if(!tracking_number||!origin||!destination) { showToast('Fill required fields', false); return; }
+  try {
+    await post('/shipments/', {tracking_number,origin,destination,status,weight_kg,cost,distance_km,warehouse_id});
+    showToast('Shipment created');
+    loadShipments();
+  } catch(e) { showToast('Error: '+e.message, false); }
+}
+
+async function createInventory() {
+  const product_name = document.getElementById('inv-name').value.trim();
+  const sku = document.getElementById('inv-sku').value.trim();
+  const quantity = parseInt(document.getElementById('inv-qty').value)||0;
+  const min_stock = parseInt(document.getElementById('inv-min').value)||0;
+  const warehouse_id = parseInt(document.getElementById('inv-wh').value)||null;
+  if(!product_name||!sku) { showToast('Fill required fields', false); return; }
+  try {
+    await post('/inventory/', {product_name,sku,quantity,min_stock,warehouse_id});
+    showToast('Inventory added');
+    loadInventory();
+  } catch(e) { showToast('Error: '+e.message, false); }
+}
+
+function navigate(page) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  const titles = {dashboard:'Operational Dashboard',warehouses:'Warehouse Management',shipments:'Shipment Tracking',inventory:'Inventory Control',analytics:'Analytics & Risk Intelligence'};
+  document.getElementById('page-title').textContent = titles[page]||page;
+  event.currentTarget.classList.add('active');
+  if(page==='dashboard') loadDashboard();
+  else if(page==='warehouses') loadWarehouses();
+  else if(page==='shipments') loadShipments();
+  else if(page==='inventory') loadInventory();
+  else if(page==='analytics') loadAnalytics();
+}
+
+function refreshAll() {
+  const active = document.querySelector('.page.active').id.replace('page-','');
+  navigate({currentTarget:document.querySelector('.nav-item.active')}, active);
+  if(active==='dashboard') loadDashboard();
+  else if(active==='warehouses') loadWarehouses();
+  else if(active==='shipments') loadShipments();
+  else if(active==='inventory') loadInventory();
+  else if(active==='analytics') loadAnalytics();
+}
+
+loadDashboard();
+</script>
