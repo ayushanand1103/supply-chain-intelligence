@@ -117,9 +117,8 @@ SQLAlchemy ORM
 ↓
 PostgreSQL Database
 
+
 ### Future Architecture
-
-
 Data Sources
 ↓
 Integration Layer (APIs + Streaming)
@@ -173,8 +172,6 @@ AI Copilot Layer
 ---
 
 # 📁 Project Structure
-
-
 supply-chain-intelligence/
 │
 ├── backend/
@@ -196,7 +193,6 @@ supply-chain-intelligence/
 ├── docs/
 └── README.md
 
-
 ---
 
 # ⚙️ Setup Instructions
@@ -205,19 +201,23 @@ supply-chain-intelligence/
 ```bash
 git clone <repository-url>
 cd supply-chain-intelligence
+
 Backend Setup
 cd backend
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
+
 PostgreSQL Setup
 CREATE DATABASE supply_chain_db;
 CREATE USER supply_user WITH PASSWORD 'password';
 GRANT ALL PRIVILEGES ON DATABASE supply_chain_db TO supply_user;
+
 Run Backend
 uvicorn app.main:app --reload
 API: http://127.0.0.1:8000
 Docs: http://127.0.0.1:8000/docs
+
 🧪 Current API Modules
 Warehouses
 Create warehouse
@@ -229,6 +229,7 @@ ETA prediction (ML ensemble system)
 Inventory
 Stock tracking
 Auto updates on shipment creation
+
 🧭 Development Roadmap
 Phase 1 — Foundation
 Backend architecture
@@ -250,6 +251,7 @@ Graph-based supply chain modeling (Neo4j)
 Real-time streaming (Kafka)
 Alerting system
 AI Copilot (natural language interface)
+
 🎯 Project Goal
 
 This project simulates a real-world enterprise supply chain intelligence system with:
@@ -259,11 +261,10 @@ Real-time operational analytics
 Forecasting and prediction systems
 ML-powered decision support
 Modular system design
+
 👨‍💻 Author
 
 Ayush Anand
 BSc Data Science & AI
 Christ University, Delhi NCR
-
-
 
