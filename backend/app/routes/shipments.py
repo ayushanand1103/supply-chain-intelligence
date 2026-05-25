@@ -14,7 +14,9 @@ from app.schemas.shipments import (
 from app.integration.external_api import (
     get_route_data
 )
+from app.services.eta_service import ETAService
 
+eta_service = ETAService()
 
 router = APIRouter(
     prefix="/shipments",
@@ -80,12 +82,13 @@ def create_shipment(shipment: ShipmentCreate):
 
         distance_km = route_data["distance_km"]
 
-        estimated_time_hours = round(
+        eta_result = eta_service.get_eta(
+                            source_id=shipment.source_warehouse_id,
+                            dest_id=shipment.destination_warehouse_id,
+                            distance_km=distance_km,
+                            duration_hours=route_data["estimated_time_minutes"] / 60)
 
-            route_data["estimated_time_minutes"] / 60,
-
-            2
-        )
+        estimated_time_hours = eta_result["final_eta_hours"]
 
         # =====================================
         # CHECK SOURCE INVENTORY
